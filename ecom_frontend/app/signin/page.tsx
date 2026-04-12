@@ -76,10 +76,12 @@ export default function SignInPage() {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       showToast("Login successful.", "success");
+      setEmail("");
+      setPassword("");
 
       setTimeout(() => {
         router.push("/products");
-      }, 800);
+      }, 400);
     } catch {
       showToast("Server error. Please try again.", "error");
     } finally {
