@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import Logout from "../components/ui/Logout";
@@ -60,7 +60,14 @@ function EmptyState({ category }: { category?: string }) {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <circle cx="120" cy="120" r="92" stroke="currentColor" strokeWidth="10" opacity="0.15" />
+            <circle
+              cx="120"
+              cy="120"
+              r="92"
+              stroke="currentColor"
+              strokeWidth="10"
+              opacity="0.15"
+            />
             <path
               d="M77 92H163L156 160H84L77 92Z"
               stroke="currentColor"
@@ -95,8 +102,8 @@ function EmptyState({ category }: { category?: string }) {
         </h2>
 
         <p className="mt-4 max-w-xl text-sm leading-6 text-white/65 md:text-base">
-          We couldn&apos;t find any matching products right now. Try another category
-          or go back to view everything available in the store.
+          We couldn&apos;t find any matching products right now. Try another
+          category or go back to view everything available in the store.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -162,7 +169,9 @@ function ProductCard({ product }: { product: Product }) {
           </p>
 
           <div className="mt-5 flex items-center justify-between">
-            <span className="text-2xl font-bold text-white">${product.price}</span>
+            <span className="text-2xl font-bold text-white">
+              ${product.price}
+            </span>
 
             <span
               className={`rounded-full px-3 py-1 text-xs font-medium ${
@@ -198,7 +207,7 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-export default function ProductsPage() {
+function ProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const category = searchParams.get("category") || "";
@@ -212,7 +221,9 @@ export default function ProductsPage() {
   const [logoutOpen, setLogoutOpen] = useState(false);
 
   const heading = useMemo(() => {
-    return category ? `${formatCategory(category)} Collection` : "Explore Products";
+    return category
+      ? `${formatCategory(category)} Collection`
+      : "Explore Products";
   }, [category]);
 
   useEffect(() => {
@@ -349,7 +360,8 @@ export default function ProductsPage() {
             <div className="flex flex-col items-start gap-3 md:items-end">
               {userName && (
                 <p className="text-sm text-white/70">
-                  Welcome, <span className="font-semibold text-white">{userName}</span>
+                  Welcome,{" "}
+                  <span className="font-semibold text-white">{userName}</span>
                 </p>
               )}
 
@@ -458,5 +470,43 @@ export default function ProductsPage() {
         )}
       </section>
     </main>
+  );
+}
+
+function ProductsFallback() {
+  return (
+    <main className="min-h-screen bg-[#020617] px-4 py-12 md:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl text-white">
+        <div className="rounded-[36px] border border-white/10 bg-[#0b1120]/80 p-8 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:p-10">
+          <div className="mb-6 h-8 w-56 animate-pulse rounded bg-white/10" />
+          <div className="h-4 w-80 animate-pulse rounded bg-white/10" />
+
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {[...Array(6)].map((_, index) => (
+              <div
+                key={index}
+                className="overflow-hidden rounded-[32px] border border-white/10 bg-[#0f172a]/80 shadow-xl backdrop-blur-2xl"
+              >
+                <div className="h-72 animate-pulse bg-white/10" />
+                <div className="p-5">
+                  <div className="h-6 w-2/3 animate-pulse rounded bg-white/10" />
+                  <div className="mt-3 h-4 w-full animate-pulse rounded bg-white/10" />
+                  <div className="mt-2 h-4 w-4/5 animate-pulse rounded bg-white/10" />
+                  <div className="mt-5 h-10 w-full animate-pulse rounded-2xl bg-white/10" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<ProductsFallback />}>
+      <ProductsContent />
+    </Suspense>
   );
 }
