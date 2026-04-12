@@ -81,7 +81,7 @@ export default function SignInPage() {
 
       setTimeout(() => {
         router.push("/products");
-      }, 400);
+      }, 200);
     } catch {
       showToast("Server error. Please try again.", "error");
     } finally {
