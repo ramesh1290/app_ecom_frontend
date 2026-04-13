@@ -12,21 +12,55 @@ export default function ContactPage() {
   const [message, setMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
   useEffect(() => {
     if (successMessage || errorMessage) {
       const timer = setTimeout(() => {
         setSuccessMessage("");
         setErrorMessage("");
+  
       }, 2000);
 
       return () => clearTimeout(timer); // cleanup on unmount or when messages change
     }
   }, [successMessage, errorMessage]);
+  const clearFieldError = (field: string) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const updated = { ...prev };
+      delete updated[field];
+      return updated;
+    });
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ firstName, lastName, email, subject, message });
-    // Here you would typically send the form data to your backend or an email service
+    // Basic client-side validation
+    const newErrors: Record<string, string> = {};
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+    const trimmedEmail = email.trim();
+    const trimmedSubject = subject.trim();
+    const trimmedMessage = message.trim();
+
+    if (!trimmedFirstName) newErrors.firstName = "First name is required.";
+    if (!trimmedLastName) newErrors.lastName = "Last name is required.";
+    if (!trimmedEmail) newErrors.email = "Email is required.";
+    if (!trimmedSubject) newErrors.subject = "Subject is required.";
+    if (!trimmedMessage) newErrors.message = "Message is required.";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (trimmedEmail && !emailRegex.test(trimmedEmail)) {
+      newErrors.email = "Enter a valid email address.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+
     try {
       // Simulate successful submission
       const res = await fetch(`${apiBaseUrl}/api/contact/`, {
@@ -74,6 +108,9 @@ export default function ContactPage() {
           {/* FORM (same style as signup) */}
           <div className="rounded-[32px] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-2xl md:p-10">
             <div className="mb-8">
+              {/* SUCCESS/ERROR MESSAGE (framer-motion) */
+              }
+
               <AnimatePresence>
                 {(successMessage || errorMessage) && (
                   <motion.div
@@ -94,6 +131,7 @@ export default function ContactPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+      
               <p className="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300/70">
                 Contact Us
               </p>
@@ -106,52 +144,107 @@ export default function ContactPage() {
                 Send us your message and we’ll reply soon.
               </p>
             </div>
-
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="grid gap-5 md:grid-cols-2">
-                <input
-                  type="text"
-                  placeholder="First name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-cyan-400/70"
-                />
-                <input
-                  type="text"
-                  placeholder="Last name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-cyan-400/70"
-                />
+                <div>
+                  <input
+                    type="text"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      clearFieldError("firstName");
+                    }}
+                    className={`w-full rounded-2xl border bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none transition ${errors.firstName
+                      ? "border-red-400/70 focus:border-red-400"
+                      : "border-white/10 focus:border-cyan-400/70"
+                      }`}
+                  />
+                  {errors.firstName && (
+                    <p className="mt-2 text-sm text-red-400">{errors.firstName}</p>
+                  )}
+                </div>
+
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      clearFieldError("lastName");
+                    }}
+                    className={`w-full rounded-2xl border bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none transition ${errors.lastName
+                      ? "border-red-400/70 focus:border-red-400"
+                      : "border-white/10 focus:border-cyan-400/70"
+                      }`}
+                  />
+                  {errors.lastName && (
+                    <p className="mt-2 text-sm text-red-400">{errors.lastName}</p>
+                  )}
+                </div>
               </div>
 
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-cyan-400/70"
-              />
+              <div>
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearFieldError("email");
+                  }}
+                  className={`w-full rounded-2xl border bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none transition ${errors.email
+                    ? "border-red-400/70 focus:border-red-400"
+                    : "border-white/10 focus:border-cyan-400/70"
+                    }`}
+                />
+                {errors.email && (
+                  <p className="mt-2 text-sm text-red-400">{errors.email}</p>
+                )}
+              </div>
 
-              <input
-                type="text"
-                placeholder="Subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-cyan-400/70"
-              />
+              <div>
+                <input
+                  type="text"
+                  placeholder="Subject"
+                  value={subject}
+                  onChange={(e) => {
+                    setSubject(e.target.value);
+                    clearFieldError("subject");
+                  }}
+                  className={`w-full rounded-2xl border bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none transition ${errors.subject
+                    ? "border-red-400/70 focus:border-red-400"
+                    : "border-white/10 focus:border-cyan-400/70"
+                    }`}
+                />
+                {errors.subject && (
+                  <p className="mt-2 text-sm text-red-400">{errors.subject}</p>
+                )}
+              </div>
 
-              <textarea
-                rows={6}
-                placeholder="Write your message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-cyan-400/70"
-              />
+              <div>
+                <textarea
+                  rows={6}
+                  placeholder="Write your message..."
+                  value={message}
+                  onChange={(e) => {
+                    setMessage(e.target.value);
+                    clearFieldError("message");
+                  }}
+                  className={`w-full resize-none rounded-2xl border bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none transition ${errors.message
+                    ? "border-red-400/70 focus:border-red-400"
+                    : "border-white/10 focus:border-cyan-400/70"
+                    }`}
+                />
+                {errors.message && (
+                  <p className="mt-2 text-sm text-red-400">{errors.message}</p>
+                )}
+              </div>
 
               <button
                 type="submit"
-                className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 py-3 text-sm font-semibold text-black transition hover:scale-[1.02] cursor-pointer"
+                className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]"
               >
                 Send Message
               </button>
