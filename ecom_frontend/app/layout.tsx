@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/layout/Navbar";
-import Footer from "./components/layout/Footer";
+import LayoutShell from "./components/layout/LayoutShell";
+
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,9 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={poppins.variable}>
       <body className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 font-[var(--font-poppins)] text-white">
-        <Navbar />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
+        <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
   );

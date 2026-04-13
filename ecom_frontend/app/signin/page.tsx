@@ -6,12 +6,23 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Toast from "../components/ui/Toast";
 
+interface LoggedInUser {
+  id?: number;
+  username?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+}
+
 export default function SignInPage() {
   const router = useRouter();
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [toast, setToast] = useState({
@@ -75,13 +86,20 @@ export default function SignInPage() {
       localStorage.setItem("refresh", data.refresh);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      const loggedInUser: LoggedInUser | undefined = data.user;
+
       showToast("Login successful.", "success");
       setEmail("");
       setPassword("");
+      setShowPassword(false);
 
       setTimeout(() => {
-        router.push("/products");
-      }, 200);
+        if (loggedInUser?.is_staff || loggedInUser?.is_superuser) {
+          router.push("/dashboard");
+        } else {
+          router.push("/products");
+        }
+      }, 500);
     } catch {
       showToast("Server error. Please try again.", "error");
     } finally {
@@ -156,13 +174,25 @@ export default function SignInPage() {
               </div>
 
               <div>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-base text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 pr-16 text-base text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-xl transition hover:scale-110"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? "👁️" : "🙈"}
+                  </button>
+                </div>
+
                 {fieldErrors.password && (
                   <p className="mt-2 text-sm text-red-300">
                     {fieldErrors.password}
