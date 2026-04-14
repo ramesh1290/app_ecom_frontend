@@ -283,7 +283,7 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="text-right">
-                        <p className="font-semibold text-white">${product.price}</p>
+                        <p className="font-semibold text-white">Rs.{product.price}</p>
                         <p className="mt-1 text-sm text-white/60">
                           Stock: {product.stock}
                         </p>
