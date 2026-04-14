@@ -52,7 +52,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </p>
 
         <div className="mt-4 flex items-center justify-between">
-          <span className="text-xl font-bold text-white">${product.price}</span>
+          <span className="text-xl font-bold text-white">Rs.{product.price}</span>
 
           <span
             className={`rounded-full px-3 py-1 text-xs font-medium ${

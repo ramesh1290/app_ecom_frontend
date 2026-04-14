@@ -170,15 +170,14 @@ function ProductCard({ product }: { product: Product }) {
 
           <div className="mt-5 flex items-center justify-between">
             <span className="text-2xl font-bold text-white">
-              ${product.price}
+              Rs.{product.price}
             </span>
 
             <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                product.stock > 0
+              className={`rounded-full px-3 py-1 text-xs font-medium ${product.stock > 0
                   ? "bg-emerald-500/15 text-emerald-300"
                   : "bg-red-500/15 text-red-300"
-              }`}
+                }`}
             >
               {product.stock > 0 ? "In Stock" : "Out of Stock"}
             </span>
@@ -384,39 +383,37 @@ function ProductsContent() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/products"
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                !category
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${!category
                   ? "bg-white text-black shadow-lg"
                   : "border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-              }`}
+                }`}
             >
               All
             </Link>
 
             {loadingCategories
               ? [...Array(4)].map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-10 w-24 animate-pulse rounded-full border border-white/10 bg-white/10"
-                  />
-                ))
+                <div
+                  key={index}
+                  className="h-10 w-24 animate-pulse rounded-full border border-white/10 bg-white/10"
+                />
+              ))
               : categories.map((item) => {
-                  const isActive = category === item.slug;
+                const isActive = category === item.slug;
 
-                  return (
-                    <Link
-                      key={item.id}
-                      href={`/products?category=${item.slug}`}
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                        isActive
-                          ? "bg-white text-black shadow-lg"
-                          : "border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/products?category=${item.slug}`}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${isActive
+                        ? "bg-white text-black shadow-lg"
+                        : "border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
                       }`}
-                    >
-                      {item.name}
-                    </Link>
-                  );
-                })}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
           </div>
 
           <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">

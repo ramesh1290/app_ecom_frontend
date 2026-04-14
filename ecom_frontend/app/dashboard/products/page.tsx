@@ -490,11 +490,10 @@ export default function DashboardProductsPage() {
 
         {message && (
           <div
-            className={`mb-6 rounded-2xl border px-4 py-3 text-sm shadow-lg ${
-              message.type === "success"
+            className={`mb-6 rounded-2xl border px-4 py-3 text-sm shadow-lg ${message.type === "success"
                 ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
                 : "border-red-400/20 bg-red-400/10 text-red-200"
-            }`}
+              }`}
           >
             {message.text}
           </div>
@@ -608,8 +607,8 @@ export default function DashboardProductsPage() {
                       ? "Updating..."
                       : "Creating..."
                     : editingId
-                    ? "Update Product"
-                    : "Create Product"}
+                      ? "Update Product"
+                      : "Create Product"}
                 </button>
 
                 {editingId && (
@@ -654,7 +653,7 @@ export default function DashboardProductsPage() {
                         <div>
                           <p className="text-lg font-semibold text-white">{product.name}</p>
                           <p className="text-sm text-white/60">{product.category_name}</p>
-                          <p className="mt-1 text-sm text-white/70">${product.price}</p>
+                          <p className="mt-1 text-sm text-white/70">Rs.{product.price}</p>
                           <p className="text-sm text-white/60">Stock: {product.stock}</p>
                           {product.description && (
                             <p className="mt-1 line-clamp-2 text-sm text-white/60">
