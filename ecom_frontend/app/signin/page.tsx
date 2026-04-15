@@ -97,7 +97,7 @@ export default function SignInPage() {
         if (loggedInUser?.is_staff || loggedInUser?.is_superuser) {
           router.push("/dashboard");
         } else {
-          router.push("/products");
+          router.push("/cart");
         }
       }, 500);
     } catch {

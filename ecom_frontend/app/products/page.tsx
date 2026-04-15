@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import Logout from "../components/ui/Logout";
 
 interface Product {
   id: number;
@@ -24,6 +23,11 @@ interface Category {
   name: string;
   slug: string;
 }
+
+type PendingCartItem = {
+  product: number;
+  quantity: number;
+};
 
 const formatCategory = (value?: string | null) => {
   if (!value) return "Explore Products";
@@ -127,6 +131,77 @@ function EmptyState({ category }: { category?: string }) {
 }
 
 function ProductCard({ product }: { product: Product }) {
+  const router = useRouter();
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const [adding, setAdding] = useState(false);
+
+  const savePendingCartItem = () => {
+    const raw = localStorage.getItem("pending_cart_items");
+    const pending: PendingCartItem[] = raw ? JSON.parse(raw) : [];
+
+    const existingIndex = pending.findIndex((item) => item.product === product.id);
+
+    if (existingIndex === -1) {
+      pending.push({
+        product: product.id,
+        quantity: 1,
+      });
+    } else {
+      pending[existingIndex].quantity = 1;
+    }
+
+    localStorage.setItem("pending_cart_items", JSON.stringify(pending));
+  };
+
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("access");
+
+    if (!token) {
+      savePendingCartItem();
+      router.push("/signin?redirect=/cart");
+      return;
+    }
+
+    if (!apiBaseUrl) {
+      console.error("Missing NEXT_PUBLIC_API_BASE_URL");
+      return;
+    }
+
+    try {
+      setAdding(true);
+
+      const res = await fetch(`${apiBaseUrl}/api/cart/add/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          product: product.id,
+          quantity: 1,
+        }),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        savePendingCartItem();
+        router.push("/signin?redirect=/cart");
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Add to cart failed:", errorData);
+        return;
+      }
+
+      router.push("/cart");
+    } catch (error) {
+      console.error("Add to cart error:", error);
+    } finally {
+      setAdding(false);
+    }
+  };
+
   return (
     <motion.div
       whileHover={{ y: -6 }}
@@ -174,10 +249,11 @@ function ProductCard({ product }: { product: Product }) {
             </span>
 
             <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${product.stock > 0
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                product.stock > 0
                   ? "bg-emerald-500/15 text-emerald-300"
                   : "bg-red-500/15 text-red-300"
-                }`}
+              }`}
             >
               {product.stock > 0 ? "In Stock" : "Out of Stock"}
             </span>
@@ -185,10 +261,12 @@ function ProductCard({ product }: { product: Product }) {
 
           <div className="mt-5 flex gap-3">
             <motion.button
+              onClick={handleAddToCart}
               whileTap={{ scale: 0.97 }}
-              className="flex-1 rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+              disabled={adding || product.stock < 1}
+              className="flex-1 rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:opacity-60 cursor-pointer"
             >
-              Add to Cart
+              {adding ? "Adding..." : product.stock > 0 ? "Add to Cart" : "Out of Stock"}
             </motion.button>
 
             <motion.div whileTap={{ scale: 0.97 }}>
@@ -207,7 +285,6 @@ function ProductCard({ product }: { product: Product }) {
 }
 
 function ProductsContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const category = searchParams.get("category") || "";
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -216,40 +293,12 @@ function ProductsContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [userName, setUserName] = useState("");
-  const [logoutOpen, setLogoutOpen] = useState(false);
 
   const heading = useMemo(() => {
     return category
       ? `${formatCategory(category)} Collection`
       : "Explore Products";
   }, [category]);
-
-  useEffect(() => {
-    const access = localStorage.getItem("access");
-    const user = localStorage.getItem("user");
-
-    if (!access) {
-      router.push("/signin");
-      return;
-    }
-
-    if (user) {
-      try {
-        const parsedUser = JSON.parse(user);
-        setUserName(parsedUser.firstName || parsedUser.email || "");
-      } catch {
-        setUserName("");
-      }
-    }
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    localStorage.removeItem("user");
-    router.push("/");
-  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -324,12 +373,6 @@ function ProductsContent() {
 
   return (
     <main className="min-h-screen bg-[#020617] px-4 py-12 md:px-6 lg:px-8">
-      <Logout
-        open={logoutOpen}
-        onClose={() => setLogoutOpen(false)}
-        onConfirm={handleLogout}
-      />
-
       <section className="mx-auto max-w-7xl text-white">
         <motion.div
           initial={{ opacity: 0, y: 22 }}
@@ -342,35 +385,17 @@ function ProductsContent() {
             <div className="absolute bottom-[-70px] right-[-70px] h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
           </div>
 
-          <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="mb-3 text-sm font-medium uppercase tracking-[0.3em] text-white/55">
-                Our Collection
-              </p>
+          <div className="relative">
+            <p className="mb-3 text-sm font-medium uppercase tracking-[0.3em] text-white/55">
+              Our Collection
+            </p>
 
-              <h1 className="text-4xl font-bold md:text-5xl">{heading}</h1>
+            <h1 className="text-4xl font-bold md:text-5xl">{heading}</h1>
 
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60">
-                Discover premium products curated for a clean, modern, and
-                refined shopping experience.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-start gap-3 md:items-end">
-              {userName && (
-                <p className="text-sm text-white/70">
-                  Welcome,{" "}
-                  <span className="font-semibold text-white">{userName}</span>
-                </p>
-              )}
-
-              <button
-                onClick={() => setLogoutOpen(true)}
-                className="rounded-2xl border border-red-400/20 bg-red-400/10 px-5 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-400/15"
-              >
-                Logout
-              </button>
-            </div>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60">
+              Discover premium products curated for a clean, modern, and
+              refined shopping experience.
+            </p>
           </div>
         </motion.div>
 
@@ -383,37 +408,39 @@ function ProductsContent() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/products"
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${!category
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
+                !category
                   ? "bg-white text-black shadow-lg"
                   : "border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-                }`}
+              }`}
             >
               All
             </Link>
 
             {loadingCategories
               ? [...Array(4)].map((_, index) => (
-                <div
-                  key={index}
-                  className="h-10 w-24 animate-pulse rounded-full border border-white/10 bg-white/10"
-                />
-              ))
+                  <div
+                    key={index}
+                    className="h-10 w-24 animate-pulse rounded-full border border-white/10 bg-white/10"
+                  />
+                ))
               : categories.map((item) => {
-                const isActive = category === item.slug;
+                  const isActive = category === item.slug;
 
-                return (
-                  <Link
-                    key={item.id}
-                    href={`/products?category=${item.slug}`}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${isActive
-                        ? "bg-white text-black shadow-lg"
-                        : "border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+                  return (
+                    <Link
+                      key={item.id}
+                      href={`/products?category=${item.slug}`}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
+                        isActive
+                          ? "bg-white text-black shadow-lg"
+                          : "border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
                       }`}
-                  >
-                    {item.name}
-                  </Link>
-                );
-              })}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
           </div>
 
           <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">

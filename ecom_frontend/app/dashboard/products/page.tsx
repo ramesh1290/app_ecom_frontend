@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Logout from "../../components/ui/Logout";
 import Delete from "../../components/ui/Delete";
@@ -113,6 +113,13 @@ export default function DashboardProductsPage() {
 
     return () => clearTimeout(timer);
   }, [message]);
+
+  const groupedProducts = useMemo(() => {
+    return categories.map((category) => ({
+      ...category,
+      products: products.filter((product) => product.category === category.id),
+    }));
+  }, [categories, products]);
 
   const handleLogout = () => {
     localStorage.removeItem("access");
@@ -490,10 +497,11 @@ export default function DashboardProductsPage() {
 
         {message && (
           <div
-            className={`mb-6 rounded-2xl border px-4 py-3 text-sm shadow-lg ${message.type === "success"
+            className={`mb-6 rounded-2xl border px-4 py-3 text-sm shadow-lg ${
+              message.type === "success"
                 ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
                 : "border-red-400/20 bg-red-400/10 text-red-200"
-              }`}
+            }`}
           >
             {message.text}
           </div>
@@ -625,60 +633,92 @@ export default function DashboardProductsPage() {
           </div>
 
           <div className="rounded-[32px] border border-white/10 bg-[#0b1120]/80 p-6 shadow-2xl backdrop-blur-2xl">
-            <h2 className="mb-5 text-2xl font-semibold">All Products</h2>
+            <h2 className="mb-5 text-2xl font-semibold">Products by Category</h2>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               {products.length === 0 ? (
                 <p className="text-sm text-white/60">No products found.</p>
               ) : (
-                products.map((product) => (
+                groupedProducts.map((category) => (
                   <div
-                    key={product.id}
-                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                    key={category.id}
+                    className="rounded-[28px] border border-white/10 bg-white/5 p-5"
                   >
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                      <div className="flex items-center gap-4">
-                        {product.image ? (
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-20 w-20 rounded-2xl object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 text-xs text-white/50">
-                            No Image
-                          </div>
-                        )}
-
-                        <div>
-                          <p className="text-lg font-semibold text-white">{product.name}</p>
-                          <p className="text-sm text-white/60">{product.category_name}</p>
-                          <p className="mt-1 text-sm text-white/70">Rs.{product.price}</p>
-                          <p className="text-sm text-white/60">Stock: {product.stock}</p>
-                          {product.description && (
-                            <p className="mt-1 line-clamp-2 text-sm text-white/60">
-                              {product.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => handleEdit(product)}
-                          className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/15"
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          onClick={() => openDeleteModal(product)}
-                          className="rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-400/15"
-                        >
-                          Delete
-                        </button>
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-semibold text-white">
+                          {category.name}
+                        </h3>
+                        <p className="text-sm text-white/55">
+                          {category.products.length} product
+                          {category.products.length !== 1 ? "s" : ""}
+                        </p>
                       </div>
                     </div>
+
+                    {category.products.length === 0 ? (
+                      <p className="text-sm text-white/50">
+                        No products in this category yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {category.products.map((product) => (
+                          <div
+                            key={product.id}
+                            className="rounded-2xl border border-white/10 bg-[#0f172a]/70 p-4"
+                          >
+                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                              <div className="flex items-center gap-4">
+                                {product.image ? (
+                                  <img
+                                    src={product.image}
+                                    alt={product.name}
+                                    className="h-20 w-20 rounded-2xl object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 text-xs text-white/50">
+                                    No Image
+                                  </div>
+                                )}
+
+                                <div>
+                                  <p className="text-lg font-semibold text-white">
+                                    {product.name}
+                                  </p>
+                                  <p className="text-sm text-white/70">
+                                    Rs.{product.price}
+                                  </p>
+                                  <p className="text-sm text-white/60">
+                                    Stock: {product.stock}
+                                  </p>
+                                  {product.description && (
+                                    <p className="mt-1 line-clamp-2 text-sm text-white/55">
+                                      {product.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex gap-3">
+                                <button
+                                  onClick={() => handleEdit(product)}
+                                  className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/15"
+                                >
+                                  Edit
+                                </button>
+
+                                <button
+                                  onClick={() => openDeleteModal(product)}
+                                  className="rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-400/15"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))
               )}

@@ -26,7 +26,7 @@ export default function Logout({ open, onClose, onConfirm }: LogoutProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ duration: 0.25 }}
-            className="fixed left-1/2 top-1/2 z-[1000] w-[92%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-white/10 bg-white/10 p-6 text-white shadow-2xl backdrop-blur-2xl"
+            className="fixed left-1/2 top-1/2 z-[1000] w-[92%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-white/10 bg-white/10 p-6 text-white shadow-2xl backdrop-blur-2xl "
           >
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-red-400/20 bg-red-400/10 text-2xl text-red-200">
               ⎋
@@ -40,14 +40,14 @@ export default function Logout({ open, onClose, onConfirm }: LogoutProps) {
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
               <button
                 onClick={onClose}
-                className="rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/10 hover:text-white"
+                className="rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/10 hover:text-white cursor-pointer"
               >
                 Cancel
               </button>
 
               <button
                 onClick={onConfirm}
-                className="rounded-2xl border border-red-400/20 bg-red-400/10 px-5 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-400/15"
+                className="rounded-2xl border border-red-400/20 bg-red-400/10 px-5 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-400/15 cursor-pointer"
               >
                 Yes, Logout
               </button>

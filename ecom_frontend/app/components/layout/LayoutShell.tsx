@@ -11,13 +11,13 @@ export default function LayoutShell({
 }) {
   const pathname = usePathname();
 
-  const isDashboard = pathname.startsWith("/dashboard");
+  const hideLayout = pathname.startsWith("/dashboard") || pathname.startsWith("/cart");
 
   return (
     <>
-      {!isDashboard && <Navbar />}
+      {!hideLayout && <Navbar />}
       <main className="min-h-screen">{children}</main>
-      {!isDashboard && <Footer />}
+      {!hideLayout && <Footer />}
     </>
   );
 }
