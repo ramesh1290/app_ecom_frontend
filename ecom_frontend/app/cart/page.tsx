@@ -22,6 +22,12 @@ interface PendingCartItem {
   quantity: number;
 }
 
+interface EsewaInitiateResponse {
+  message: string;
+  form_url: string;
+  payload: Record<string, string>;
+}
+
 export default function CartPage() {
   const router = useRouter();
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -32,6 +38,7 @@ export default function CartPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [userName, setUserName] = useState("");
+  const [checkingOut, setCheckingOut] = useState(false);
 
   const getImageUrl = (image: string | null) => {
     if (!image) return null;
@@ -238,6 +245,61 @@ export default function CartPage() {
     }
   };
 
+  const handleEsewaCheckout = async () => {
+    const token = localStorage.getItem("access");
+
+    if (!token) {
+      router.push("/signin?redirect=/cart");
+      return;
+    }
+
+    if (!apiBaseUrl) {
+      console.error("Missing NEXT_PUBLIC_API_BASE_URL");
+      return;
+    }
+
+    try {
+      setCheckingOut(true);
+
+      const res = await fetch(`${apiBaseUrl}/api/payments/esewa/initiate/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data: EsewaInitiateResponse = await res.json();
+
+      if (!res.ok) {
+        console.error("Checkout initiation failed:", data);
+        alert(data?.message || "Failed to initiate eSewa payment.");
+        return;
+      }
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.form_url;
+
+      Object.entries(data.payload).forEach(([key, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch (error) {
+      console.error("eSewa checkout error:", error);
+      alert("Something went wrong while starting eSewa checkout.");
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
   const subtotal = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + Number(item.total_price), 0);
   }, [cartItems]);
@@ -251,34 +313,7 @@ export default function CartPage() {
       <main className="min-h-screen bg-[#020617] px-4 py-12 md:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="rounded-[36px] border border-white/10 bg-[#0b1120]/80 p-8 text-white shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:p-10">
-            <div className="mb-4 h-8 w-52 animate-pulse rounded bg-white/10" />
-            <div className="h-4 w-72 animate-pulse rounded bg-white/10" />
-
-            <div className="mt-10 grid gap-6 lg:grid-cols-[1.6fr_0.8fr]">
-              <div className="space-y-5">
-                {[...Array(3)].map((_, index) => (
-                  <div
-                    key={index}
-                    className="rounded-[32px] border border-white/10 bg-[#0f172a]/80 p-5 backdrop-blur-2xl"
-                  >
-                    <div className="flex flex-col gap-5 sm:flex-row">
-                      <div className="h-32 w-full animate-pulse rounded-2xl bg-white/10 sm:w-32" />
-                      <div className="flex-1">
-                        <div className="h-6 w-48 animate-pulse rounded bg-white/10" />
-                        <div className="mt-3 h-4 w-28 animate-pulse rounded bg-white/10" />
-                        <div className="mt-5 h-10 w-full animate-pulse rounded-2xl bg-white/10" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="rounded-[32px] border border-white/10 bg-[#0f172a]/80 p-6 backdrop-blur-2xl">
-                <div className="h-7 w-40 animate-pulse rounded bg-white/10" />
-                <div className="mt-6 h-24 animate-pulse rounded-2xl bg-white/10" />
-                <div className="mt-6 h-12 animate-pulse rounded-2xl bg-white/10" />
-              </div>
-            </div>
+            Loading cart...
           </div>
         </div>
       </main>
@@ -300,30 +335,19 @@ export default function CartPage() {
           transition={{ duration: 0.45, ease: "easeOut" }}
           className="relative mb-10 overflow-hidden rounded-[36px] border border-white/10 bg-[#0b1120]/80 p-8 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:p-10"
         >
-          <div className="absolute inset-0">
-            <div className="absolute left-[-50px] top-[-50px] h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl" />
-            <div className="absolute bottom-[-50px] right-[-50px] h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
-          </div>
-
           <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="mb-3 text-sm font-medium uppercase tracking-[0.3em] text-white/55">
                 Your Cart
               </p>
-
-              <h1 className="text-4xl font-bold md:text-5xl">
-                Shopping Cart
-              </h1>
-
+              <h1 className="text-4xl font-bold md:text-5xl">Shopping Cart</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60">
-                Review your selected items, update quantities, and continue your
-                premium shopping experience.
+                Review your selected items, update quantities, and continue your premium shopping experience.
               </p>
 
               {userName && (
                 <p className="mt-4 text-sm text-white/70">
-                  Signed in as{" "}
-                  <span className="font-semibold text-white">{userName}</span>
+                  Signed in as <span className="font-semibold text-white">{userName}</span>
                 </p>
               )}
             </div>
@@ -347,63 +371,12 @@ export default function CartPage() {
         </motion.div>
 
         {cartItems.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: "easeOut" }}
-            className="relative overflow-hidden rounded-[36px] border border-white/10 bg-[#0f172a]/80 p-8 text-white shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:p-12"
-          >
-            <div className="absolute inset-0">
-              <div className="absolute left-[-50px] top-[-50px] h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl" />
-              <div className="absolute bottom-[-50px] right-[-50px] h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
-            </div>
-
+          <div className="rounded-[36px] border border-white/10 bg-[#0f172a]/80 p-8 text-white shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:p-12">
             <div className="relative flex flex-col items-center text-center">
-              <div className="mb-6 flex h-28 w-28 items-center justify-center rounded-full border border-white/10 bg-white/5">
-                <svg
-                  viewBox="0 0 240 240"
-                  className="h-16 w-16 text-white/80"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r="92"
-                    stroke="currentColor"
-                    strokeWidth="10"
-                    opacity="0.15"
-                  />
-                  <path
-                    d="M77 92H163L156 160H84L77 92Z"
-                    stroke="currentColor"
-                    strokeWidth="10"
-                    strokeLinejoin="round"
-                    opacity="0.9"
-                  />
-                  <path
-                    d="M97 92C97 79 107 68 120 68C133 68 143 79 143 92"
-                    stroke="currentColor"
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                    opacity="0.9"
-                  />
-                </svg>
-              </div>
-
-              <p className="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300/75">
-                Empty Cart
-              </p>
-
-              <h2 className="text-3xl font-bold md:text-4xl">
-                Your cart is waiting
-              </h2>
-
+              <h2 className="text-3xl font-bold md:text-4xl">Your cart is waiting</h2>
               <p className="mt-4 max-w-xl text-sm leading-6 text-white/65 md:text-base">
-                You haven&apos;t added anything yet. Explore the collection and
-                bring your favorite products here.
+                You haven&apos;t added anything yet.
               </p>
-
               <Link
                 href="/products"
                 className="mt-8 rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]"
@@ -411,7 +384,7 @@ export default function CartPage() {
                 Browse Products
               </Link>
             </div>
-          </motion.div>
+          </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1.65fr_0.85fr]">
             <div className="space-y-5">
@@ -457,9 +430,7 @@ export default function CartPage() {
                       <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={() =>
-                              handleUpdateQuantity(item.id, item.quantity - 1)
-                            }
+                            onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                             disabled={updatingId === item.id}
                             className="h-11 w-11 rounded-2xl border border-white/10 bg-white/5 text-lg text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                           >
@@ -471,9 +442,7 @@ export default function CartPage() {
                           </div>
 
                           <button
-                            onClick={() =>
-                              handleUpdateQuantity(item.id, item.quantity + 1)
-                            }
+                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                             disabled={updatingId === item.id}
                             className="h-11 w-11 rounded-2xl border border-white/10 bg-white/5 text-lg text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                           >
@@ -507,9 +476,7 @@ export default function CartPage() {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="h-fit rounded-[32px] border border-white/10 bg-[#0f172a]/80 p-6 shadow-[0_14px_40px_rgba(0,0,0,0.38)] backdrop-blur-2xl"
             >
-              <h2 className="text-2xl font-semibold text-white">
-                Order Summary
-              </h2>
+              <h2 className="text-2xl font-semibold text-white">Order Summary</h2>
 
               <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between text-white/70">
@@ -530,12 +497,16 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <button className="mt-6 w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] cursor-pointer">
-                Proceed to Checkout
+              <button
+                onClick={handleEsewaCheckout}
+                disabled={checkingOut}
+                className="mt-6 w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] cursor-pointer disabled:opacity-60"
+              >
+                {checkingOut ? "Redirecting to eSewa..." : "Pay with eSewa"}
               </button>
 
               <p className="mt-4 text-center text-xs text-white/45">
-                Fast, elegant, and secure checkout flow coming next.
+                Secure eSewa test checkout
               </p>
             </motion.div>
           </div>

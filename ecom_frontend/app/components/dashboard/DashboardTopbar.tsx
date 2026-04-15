@@ -13,6 +13,7 @@ const navItems = [
   { label: "Overview", href: "/dashboard" },
   { label: "Categories", href: "/dashboard/categories" },
   { label: "Products", href: "/dashboard/products" },
+  { label: "Orders", href: "/dashboard/orders" },
   { label: "Messages", href: "/dashboard/contacts" },
 ];
 
