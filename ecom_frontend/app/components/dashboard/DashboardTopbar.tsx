@@ -14,6 +14,7 @@ const navItems = [
   { label: "Categories", href: "/dashboard/categories" },
   { label: "Products", href: "/dashboard/products" },
   { label: "Orders", href: "/dashboard/orders" },
+  { label: "WhyChooseUs", href: "/dashboard/why-choose-us" },
   { label: "Messages", href: "/dashboard/contacts" },
 ];
 
