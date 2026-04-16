@@ -1,82 +1,182 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+
+interface About {
+  id?: number;
+  title: string;
+  description_1: string;
+  description_2?: string;
+
+  mission_title: string;
+  mission_desc: string;
+
+  vision_title: string;
+  vision_desc: string;
+
+  image?: string | null;
+
+  created_at?: string;
+  updated_at?: string;
+}
 
 export default function AboutPage() {
+  const [data, setData] = useState<About | null>(null);
+
+  const API = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+  useEffect(() => {
+    const fetchAbout = async () => {
+      try {
+        const res = await fetch(`${API}/api/about/`);
+        const json = await res.json();
+        setData(json?.[0]);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchAbout();
+  }, [API]);
+
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#05060a] text-white">
+        Loading About...
+      </div>
+    );
+  }
+
   return (
-    <main className="min-h-screen px-4 py-12 md:px-6 lg:px-8">
-      <section className="mx-auto max-w-7xl text-white">
-        <div className="grid gap-8 lg:grid-cols-2">
-          
-          {/* TEXT CARD */}
-          <div className="rounded-[32px] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-2xl md:p-10">
-            <p className="mb-3 text-sm font-medium uppercase tracking-[0.3em] text-cyan-300/70">
-              About Our Brand
-            </p>
+    <main className="bg-[#05060a] text-white overflow-hidden">
 
-            <h1 className="text-4xl font-bold leading-tight md:text-5xl">
-              Crafted for a premium shopping experience
-            </h1>
+      {/* ================= HERO ================= */}
+      <section className="relative h-[92vh] flex items-center justify-center px-6">
 
-            <p className="mt-5 text-sm leading-7 text-white/70 md:text-base">
-              At Ecom, we believe online shopping should feel elegant, smooth,
-              and trustworthy. Our goal is to deliver a modern and seamless
-              experience where users can explore, discover, and purchase with
-              confidence.
-            </p>
-
-            <p className="mt-4 text-sm leading-7 text-white/70 md:text-base">
-              We focus on clean design, fast performance, and intuitive user
-              interaction so that every step — from browsing to checkout — feels
-              effortless and enjoyable.
-            </p>
-
-            {/* SMALL INFO GRID (minimal, not heavy) */}
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-                <p className="text-xs uppercase tracking-[0.25em] text-cyan-300/70">
-                  Our Mission
-                </p>
-                <p className="mt-2 text-sm text-white/70">
-                  Deliver a clean, fast, and modern e-commerce experience.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-                <p className="text-xs uppercase tracking-[0.25em] text-cyan-300/70">
-                  Our Vision
-                </p>
-                <p className="mt-2 text-sm text-white/70">
-                  Redefine how users interact with online shopping platforms.
-                </p>
-              </div>
-            </div>
+        {data.image && (
+          <div className="absolute inset-0">
+            <Image
+              src={data.image}
+              alt="about hero"
+              fill
+              priority
+              className="object-cover scale-110 opacity-40"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/70 to-[#05060a]" />
           </div>
+        )}
 
-          {/* IMAGE CARD */}
-          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-white/5 shadow-2xl backdrop-blur-2xl">
-            <div className="relative h-full min-h-[420px]">
-              <Image
-                src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=1400&auto=format&fit=crop"
-                alt="Fashion store"
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        <div className="relative text-center max-w-4xl">
+          <p className="text-cyan-300 tracking-[0.35em] text-xs uppercase">
+            About Us
+          </p>
 
-              {/* overlay text (subtle, not heavy) */}
-              <div className="absolute bottom-6 left-6 right-6">
-                <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">
-                  Experience
-                </p>
-                <h3 className="mt-2 text-xl font-semibold text-white">
-                  Designed with simplicity and performance in mind and built to provide a premium shopping experience for users who value quality and elegance.
-                </h3>
-              </div>
-            </div>
-          </div>
+          <h1 className="mt-5 text-5xl md:text-7xl font-semibold leading-tight">
+            {data.title}
+          </h1>
+
+          <p className="mt-6 text-white/60 text-lg max-w-2xl mx-auto">
+            {data.description_1}
+          </p>
         </div>
       </section>
+
+      {/* ================= STORY ================= */}
+      <section className="max-w-6xl mx-auto px-6 py-28 grid md:grid-cols-2 gap-12">
+
+        {/* LEFT TEXT */}
+        <div className="space-y-8">
+
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
+            <h2 className="text-xs uppercase tracking-[0.35em] text-cyan-300/70">
+              Story
+            </h2>
+            <p className="mt-4 text-white/70 leading-relaxed">
+              {data.description_2}
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
+            <h2 className="text-xs uppercase tracking-[0.35em] text-cyan-300/70">
+              {data.mission_title}
+            </h2>
+            <p className="mt-4 text-white/70 leading-relaxed">
+              {data.mission_desc}
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
+            <h2 className="text-xs uppercase tracking-[0.35em] text-purple-300/70">
+              {data.vision_title}
+            </h2>
+            <p className="mt-4 text-white/70 leading-relaxed">
+              {data.vision_desc}
+            </p>
+          </div>
+
+        </div>
+
+        {/* RIGHT IMAGE */}
+        <div className="relative">
+          <div className="sticky top-24 rounded-[28px] overflow-hidden border border-white/10 shadow-2xl">
+            {data.image && (
+              <Image
+                src={data.image}
+                alt="about visual"
+                width={900}
+                height={900}
+                className="w-full h-[540px] object-cover"
+              />
+            )}
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          </div>
+        </div>
+
+      </section>
+
+      {/* ================= FOOTER CTA ================= */}
+      <section className="px-6 pb-28 text-center">
+
+        <div className="max-w-4xl mx-auto rounded-[32px] border border-white/10 bg-white/5 p-14 backdrop-blur-xl">
+
+          <h2 className="text-3xl md:text-5xl font-semibold">
+            Experience shopping redefined
+          </h2>
+
+          <p className="mt-5 text-white/60 leading-relaxed">
+            We focus on delivering a smooth, elegant, and trustworthy shopping experience
+            where every product feels carefully chosen and every interaction feels effortless.
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+
+              <Link
+                href="/products"
+                className="rounded-2xl bg-white text-black px-6 py-3 font-medium hover:opacity-90 transition"
+              >
+                Start Shopping
+              </Link>
+
+              <Link
+                href="/learn-more"
+                className="rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-white/80 hover:bg-white/10 transition"
+              >
+                Learn More
+              </Link>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
     </main>
   );
 }
