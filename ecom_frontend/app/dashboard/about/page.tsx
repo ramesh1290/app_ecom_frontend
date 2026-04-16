@@ -27,30 +27,33 @@ export default function AboutDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const [isSavingUI, setIsSavingUI] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
   const [logoutOpen, setLogoutOpen] = useState(false);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-
-  useEffect(() => {
-    fetchAbout();
-  }, []);
-
+  // FETCH
   const fetchAbout = async () => {
     try {
       const res = await fetch(`${API}/api/about/`);
       const json = await res.json();
 
-      setData(json[0]);
-      setForm(json[0]);
+      const about = json?.[0];
+      setData(about);
+      setForm(about);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchAbout();
+  }, []);
+
+  // INPUT CHANGE
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -62,6 +65,7 @@ export default function AboutDashboard() {
     });
   };
 
+  // IMAGE
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -70,10 +74,12 @@ export default function AboutDashboard() {
     setImagePreview(URL.createObjectURL(file));
   };
 
+  // SAVE (🔥 MAIN LOGIC)
   const handleSave = async () => {
     if (!form) return;
 
     try {
+      setIsSavingUI(true);
       setSaveStatus("saving");
 
       const formData = new FormData();
@@ -100,18 +106,23 @@ export default function AboutDashboard() {
       setData(updated);
       setForm(updated);
 
-      setEditMode(false);
       setImageFile(null);
       setImagePreview(null);
 
-      setSaveStatus("saved");
-
+      // 🔥 Saving → Saved → Fade → Back to Edit
       setTimeout(() => {
-        setSaveStatus("idle");
-      }, 2000);
+        setSaveStatus("saved");
+
+        setTimeout(() => {
+          setSaveStatus("idle");
+          setIsSavingUI(false);
+          setEditMode(false);
+        }, 1500);
+      }, 800);
+
     } catch (err) {
       console.error(err);
-      setSaveStatus("idle");
+      setIsSavingUI(false);
     }
   };
 
@@ -131,7 +142,7 @@ export default function AboutDashboard() {
   if (!data || !form) return null;
 
   return (
-    <main className="min-h-screen bg-[#020617] text-white px-4 py-10">
+    <main className="min-h-screen bg-[#020617] text-white px-6 py-10">
 
       <Logout
         open={logoutOpen}
@@ -139,7 +150,7 @@ export default function AboutDashboard() {
         onConfirm={handleLogout}
       />
 
-      <section className="mx-auto max-w-7xl">
+      <section className="mx-auto max-w-6xl">
 
         <DashboardTopbar
           adminName="Admin"
@@ -147,108 +158,124 @@ export default function AboutDashboard() {
         />
 
         {/* HEADER */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="flex items-center justify-between mb-10">
 
           <div>
             <h1 className="text-3xl font-bold">About Page</h1>
-            <p className="text-white/60 text-sm mt-1">
-              Manage your brand story content
+            <p className="text-white/50 text-sm mt-1">
+              Manage your brand story
             </p>
           </div>
 
-          <div className="flex gap-3 items-center">
+          {/* 🔥 BUTTON MORPH UI */}
+          <div className="flex items-center gap-3">
 
-            {/* SAVE STATUS */}
-            {saveStatus !== "idle" && (
-              <div className="text-xs px-3 py-1 rounded-full border border-white/10 bg-white/5">
-                {saveStatus === "saving" && "⏳ Saving..."}
-                {saveStatus === "saved" && "✅ Saved"}
+            {isSavingUI ? (
+              <div className="px-6 py-2 rounded-xl backdrop-blur-xl bg-white/10 border border-white/20 text-sm animate-pulse">
+                {saveStatus === "saved" ? "✅ Saved" : "⏳ Saving..."}
               </div>
+            ) : (
+              <>
+                {!editMode && (
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="px-5 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
+                  >
+                    Edit
+                  </button>
+                )}
+
+                {editMode && (
+                  <>
+                    <button
+                      onClick={() => setEditMode(false)}
+                      className="px-5 py-2 rounded-xl border border-white/10 bg-white/5"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      onClick={handleSave}
+                      className="px-5 py-2 rounded-xl bg-cyan-500/20 text-cyan-200"
+                    >
+                      Save
+                    </button>
+                  </>
+                )}
+              </>
             )}
 
-            <button
-              onClick={() => setEditMode(!editMode)}
-              className="px-5 py-2 rounded-2xl border border-white/10 bg-white/5"
-            >
-              {editMode ? "Cancel" : "Edit"}
-            </button>
-
-            {editMode && (
-              <button
-                onClick={handleSave}
-                className="px-5 py-2 rounded-2xl bg-cyan-500/20 text-cyan-200"
-              >
-                Save
-              </button>
-            )}
           </div>
         </div>
 
         {/* GRID */}
         <div className="grid lg:grid-cols-2 gap-8">
 
-          {/* FORM */}
-          <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 space-y-4">
+          {/* LEFT */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 space-y-4">
 
-            {(
-              [
-                "title",
-                "description_1",
-                "description_2",
-                "mission_title",
-                "mission_desc",
-                "vision_title",
-                "vision_desc",
-              ] as const
-            ).map((field) => {
-              const isTextArea =
-                field.includes("description") || field.includes("desc");
+            <input
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              disabled={!editMode}
+              className="w-full p-3 rounded-xl bg-black/30 border border-white/10 disabled:opacity-60"
+            />
 
-              return isTextArea ? (
-                <textarea
-                  key={field}
-                  name={field}
-                  value={(form as any)[field] || ""}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                  className={`w-full p-3 rounded-xl border border-white/10 transition
-                    ${
-                      editMode
-                        ? "bg-black/30"
-                        : "bg-black/10 opacity-70 cursor-not-allowed"
-                    }
-                  `}
-                />
-              ) : (
-                <input
-                  key={field}
-                  name={field}
-                  value={(form as any)[field] || ""}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                  className={`w-full p-3 rounded-xl border border-white/10 transition
-                    ${
-                      editMode
-                        ? "bg-black/30"
-                        : "bg-black/10 opacity-70 cursor-not-allowed"
-                    }
-                  `}
-                />
-              );
-            })}
+            <textarea
+              name="description_1"
+              value={form.description_1}
+              onChange={handleChange}
+              disabled={!editMode}
+              className="w-full p-3 rounded-xl bg-black/30 border border-white/10 disabled:opacity-60"
+            />
+
+            <textarea
+              name="description_2"
+              value={form.description_2}
+              onChange={handleChange}
+              disabled={!editMode}
+              className="w-full p-3 rounded-xl bg-black/30 border border-white/10 disabled:opacity-60"
+            />
+
+            <input
+              name="mission_title"
+              value={form.mission_title}
+              onChange={handleChange}
+              disabled={!editMode}
+              className="w-full p-3 rounded-xl bg-black/30 border border-white/10 disabled:opacity-60"
+            />
+
+            <textarea
+              name="mission_desc"
+              value={form.mission_desc}
+              onChange={handleChange}
+              disabled={!editMode}
+              className="w-full p-3 rounded-xl bg-black/30 border border-white/10 disabled:opacity-60"
+            />
+
+            <input
+              name="vision_title"
+              value={form.vision_title}
+              onChange={handleChange}
+              disabled={!editMode}
+              className="w-full p-3 rounded-xl bg-black/30 border border-white/10 disabled:opacity-60"
+            />
+
+            <textarea
+              name="vision_desc"
+              value={form.vision_desc}
+              onChange={handleChange}
+              disabled={!editMode}
+              className="w-full p-3 rounded-xl bg-black/30 border border-white/10 disabled:opacity-60"
+            />
 
             {/* IMAGE */}
             <div className="pt-4">
-              <label className="text-sm text-white/60">
-                About Image
-              </label>
-
               <input
                 type="file"
-                accept="image/*"
                 onChange={handleImageChange}
                 disabled={!editMode}
-                className="mt-2 w-full"
               />
 
               {(imagePreview || data.image) && (
@@ -260,8 +287,8 @@ export default function AboutDashboard() {
             </div>
           </div>
 
-          {/* IMAGE PREVIEW */}
-          <div className="rounded-[32px] overflow-hidden border border-white/10 bg-white/5 h-[480px] relative">
+          {/* RIGHT IMAGE */}
+          <div className="rounded-2xl overflow-hidden border border-white/10 bg-white/5 h-[480px] relative">
 
             {(imagePreview || data.image) && (
               <Image
@@ -272,11 +299,11 @@ export default function AboutDashboard() {
               />
             )}
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
           </div>
 
         </div>
+
       </section>
     </main>
   );
