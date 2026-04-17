@@ -74,7 +74,7 @@ export default function AboutDashboard() {
     setImagePreview(URL.createObjectURL(file));
   };
 
-  // SAVE (🔥 MAIN LOGIC)
+  // SAVE
   const handleSave = async () => {
     if (!form) return;
 
@@ -109,7 +109,7 @@ export default function AboutDashboard() {
       setImageFile(null);
       setImagePreview(null);
 
-      // 🔥 Saving → Saved → Fade → Back to Edit
+      // Saving → Saved → Fade → Back to Edit
       setTimeout(() => {
         setSaveStatus("saved");
 
@@ -167,7 +167,7 @@ export default function AboutDashboard() {
             </p>
           </div>
 
-          {/* 🔥 BUTTON MORPH UI */}
+          {/*  BUTTON MORPH UI */}
           <div className="flex items-center gap-3">
 
             {isSavingUI ? (
