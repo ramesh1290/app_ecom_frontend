@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import Toast from "../components/ui/Toast";
 
 export default function VerifyOTPPage() {
@@ -10,10 +10,11 @@ export default function VerifyOTPPage() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
-  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
-  const [fieldError, setFieldError] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
 
   const [toast, setToast] = useState({
     show: false,
@@ -21,135 +22,205 @@ export default function VerifyOTPPage() {
     type: "success" as "success" | "error",
   });
 
-  const showToast = (message: string, type: "success" | "error") => {
-    setToast({ show: true, message, type });
-  };
+  const [timer, setTimer] = useState(120); // 2 minutes
+  const canResend = timer === 0;
 
-  /* ---------------- SAFE EMAIL FIX (prevents build crash) ---------------- */
+  /* ---------------- EMAIL FROM URL ---------------- */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setEmail(params.get("email") || "");
   }, []);
 
-  /* ---------------- TOAST TIMER ---------------- */
+  /* ---------------- TIMER ---------------- */
+  useEffect(() => {
+    if (timer <= 0) return;
+
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ show: true, message, type });
+  };
+
   useEffect(() => {
     if (!toast.show) return;
-
-    const timer = setTimeout(() => {
-      setToast((prev) => ({ ...prev, show: false }));
-    }, 4000);
-
-    return () => clearTimeout(timer);
+    const t = setTimeout(
+      () => setToast((prev) => ({ ...prev, show: false })),
+      3000
+    );
+    return () => clearTimeout(t);
   }, [toast.show]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /* ---------------- OTP INPUT HANDLER ---------------- */
+  const handleChange = (value: string, index: number) => {
+    if (!/^\d*$/.test(value)) return;
 
-    if (!otp.trim()) {
-      setFieldError("OTP is required.");
-      showToast("Please enter OTP.", "error");
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+
+    if (value && index < 5) {
+      inputsRef.current[index + 1]?.focus();
+    }
+
+    // AUTO SUBMIT
+    if (newOtp.every((v) => v !== "")) {
+      handleSubmit(newOtp.join(""));
+    }
+  };
+
+  /* ---------------- BACKSPACE FIX ---------------- */
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    if (e.key === "Backspace") {
+      if (otp[index]) {
+        const newOtp = [...otp];
+        newOtp[index] = "";
+        setOtp(newOtp);
+      } else if (index > 0) {
+        inputsRef.current[index - 1]?.focus();
+      }
+    }
+  };
+
+  /* ---------------- VERIFY OTP ---------------- */
+  const handleSubmit = async (finalOtp?: string) => {
+    const code = finalOtp || otp.join("");
+
+    if (code.length !== 6) {
+      showToast("Enter 6 digit OTP", "error");
       return;
     }
 
-    if (otp.length !== 6) {
-      setFieldError("OTP must be 6 digits.");
-      showToast("Enter a valid 6-digit OTP.", "error");
-      return;
-    }
-
-    if (!apiBaseUrl) {
-      showToast("Missing API base URL.", "error");
-      return;
-    }
+    if (!apiBaseUrl) return;
 
     try {
       setLoading(true);
-      setFieldError("");
 
       const res = await fetch(`${apiBaseUrl}/api/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ email, otp: code }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        showToast(data?.message || "Invalid OTP.", "error");
+        showToast(data.message || "Invalid OTP", "error");
         return;
       }
 
-      showToast("OTP verified successfully.", "success");
+      showToast("OTP Verified", "success");
 
       setTimeout(() => {
         router.push(`/reset-password?email=${encodeURIComponent(email)}`);
       }, 800);
     } catch {
-      showToast("Server error. Try again.", "error");
+      showToast("Server error", "error");
     } finally {
       setLoading(false);
     }
   };
 
+  /* ---------------- RESEND OTP ---------------- */
+  const handleResend = async () => {
+    if (!canResend) return;
+
+    try {
+      setResendLoading(true);
+
+      const res = await fetch(`${apiBaseUrl}/api/forgot-password/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.message || "Failed to resend OTP", "error");
+        return;
+      }
+
+      setTimer(120); // reset 2 min
+      setOtp(new Array(6).fill(""));
+      inputsRef.current[0]?.focus();
+
+      showToast("OTP Resent", "success");
+    } catch {
+      showToast("Server error", "error");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   return (
-    <main className="relative min-h-screen bg-[#030712] px-4 py-10 text-white">
+    <main className="min-h-screen flex items-center justify-center bg-[#030712] text-white px-4">
 
-      <Toast show={toast.show} message={toast.message} type={toast.type} />
+      <Toast {...toast} />
 
-      <section className="mx-auto flex min-h-[86vh] max-w-7xl items-center justify-center rounded-[34px] border border-white/10 bg-white/5 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
 
-        <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-white/10 p-8 backdrop-blur-2xl sm:p-10">
+        <h2 className="text-center text-3xl font-bold mb-2">
+          Verify OTP
+        </h2>
 
-          <div className="mb-8 text-center">
-            <p className="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300/80">
-              Verify OTP
-            </p>
-            <h2 className="text-4xl font-bold md:text-5xl">
-              Enter OTP
-            </h2>
-            <p className="mt-3 text-sm text-white/60">
-              Enter the 6-digit OTP sent to your email
-            </p>
-          </div>
+        <p className="text-center text-white/60 mb-8">
+          Enter the 6-digit code sent to your email
+        </p>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-
-            <div>
-              <input
-                type="text"
-                maxLength={6}
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={(e) =>
-                  setOtp(e.target.value.replace(/\D/g, ""))
-                }
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center text-xl tracking-[0.4em] text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
-              />
-
-              {fieldError && (
-                <p className="mt-2 text-sm text-red-300">{fieldError}</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 py-4 text-base font-semibold text-black transition hover:scale-[1.02] disabled:opacity-70"
-            >
-              {loading ? "Verifying..." : "Verify OTP"}
-            </button>
-
-          </form>
-
-          <p className="mt-8 text-center text-sm text-white/60">
-            Back to{" "}
-            <Link href="/signin" className="text-cyan-300 hover:text-cyan-200">
-              Sign in
-            </Link>
-          </p>
-
+        {/* OTP BOXES */}
+        <div className="flex justify-center gap-3 mb-6">
+          {otp.map((digit, i) => (
+            <input
+              key={i}
+              ref={(el) => {inputsRef.current[i] = el}}
+              value={digit}
+              onChange={(e) => handleChange(e.target.value, i)}
+              onKeyDown={(e) => handleKeyDown(e, i)}
+              maxLength={1}
+              className="w-12 h-14 text-center text-xl font-bold bg-white/10 border border-white/20 rounded-xl focus:border-cyan-400 outline-none"
+            />
+          ))}
         </div>
-      </section>
+
+        {/* TIMER */}
+        <p className="text-center text-sm text-white/50 mb-2">
+          Resend available in:{" "}
+          <span className="text-cyan-300">
+            {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}
+          </span>
+        </p>
+
+        {/* VERIFY BUTTON */}
+        <button
+          onClick={() => handleSubmit()}
+          disabled={loading}
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-purple-400 text-black font-semibold"
+        >
+          {loading ? "Verifying..." : "Verify OTP"}
+        </button>
+
+        {/* RESEND */}
+        <button
+          onClick={handleResend}
+          disabled={!canResend || resendLoading}
+          className="w-full mt-3 py-2 text-sm text-cyan-300 disabled:opacity-40"
+        >
+          {resendLoading ? "Sending..." : "Resend OTP"}
+        </button>
+
+        <p className="text-center mt-6 text-sm text-white/50">
+          Back to{" "}
+          <Link href="/signin" className="text-cyan-300">
+            Sign in
+          </Link>
+        </p>
+
+      </div>
     </main>
   );
 }
