@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Toast from "../components/ui/Toast";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  const email = searchParams.get("email") || "";
+  const [email, setEmail] = useState("");
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -31,6 +30,13 @@ export default function ResetPasswordPage() {
     setToast({ show: true, message, type });
   };
 
+  /* ---------------- SAFE EMAIL FETCH (FIX FOR RENDER BUILD ERROR) ---------------- */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setEmail(params.get("email") || "");
+  }, []);
+
+  /* ---------------- TOAST TIMER ---------------- */
   useEffect(() => {
     if (!toast.show) return;
 
@@ -163,7 +169,7 @@ export default function ResetPasswordPage() {
 
               <button
                 type="button"
-                onClick={() => setShowPassword(v => !v)}
+                onClick={() => setShowPassword((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition"
               >
                 {showPassword ? <EyeOffIcon /> : <EyeIcon />}
@@ -182,7 +188,7 @@ export default function ResetPasswordPage() {
 
               <button
                 type="button"
-                onClick={() => setShowConfirmPassword(v => !v)}
+                onClick={() => setShowConfirmPassword((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition"
               >
                 {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
