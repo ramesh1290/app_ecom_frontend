@@ -14,6 +14,9 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [toast, setToast] = useState({
@@ -70,9 +73,7 @@ export default function SignUpPage() {
 
       const res = await fetch(`${apiBaseUrl}/api/register/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firstName,
           lastName,
@@ -85,172 +86,173 @@ export default function SignUpPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        showToast(data?.message || "Signup failed. Please try again.", "error");
+        showToast(data?.message || "Signup failed.", "error");
         return;
       }
 
       showToast(data.message || "Account created successfully.", "success");
+
       setFirstName("");
       setLastName("");
       setEmail("");
       setPassword("");
       setConfirmPassword("");
     } catch {
-      showToast("Unable to connect to the server.", "error");
+      showToast("Unable to connect to server.", "error");
     } finally {
       setLoading(false);
     }
   };
 
+  /* ---------------- ICONS (clean modern SVG) ---------------- */
+
+  const EyeIcon = () => (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+
+  const EyeOffIcon = () => (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17.94 17.94C16.2 19.2 14.16 20 12 20 6 20 2.5 12 2.5 12a21.9 21.9 0 015.17-6.3" />
+      <path d="M9.9 4.24A10.7 10.7 0 0112 4c6 0 9.5 8 9.5 8a20.2 20.2 0 01-4.1 5.2" />
+      <path d="M14.12 14.12A3 3 0 119.88 9.88" />
+      <path d="M3 3l18 18" />
+    </svg>
+  );
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#030712] px-4 py-10 text-white">
+    <main className="relative min-h-screen bg-[#030712] px-4 py-10 text-white">
+
       <Toast show={toast.show} message={toast.message} type={toast.type} />
 
-      <div className="absolute inset-0">
-        <div className="absolute left-[-120px] top-[-120px] h-[260px] w-[260px] rounded-full bg-cyan-500/20 blur-3xl" />
-        <div className="absolute bottom-[-120px] right-[-120px] h-[280px] w-[280px] rounded-full bg-purple-500/20 blur-3xl" />
-        <div className="absolute left-1/2 top-1/3 h-[220px] w-[220px] -translate-x-1/2 rounded-full bg-fuchsia-500/10 blur-3xl" />
-      </div>
+      <section className="mx-auto grid max-w-7xl lg:grid-cols-2 rounded-[34px] overflow-hidden border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_25px_80px_rgba(0,0,0,0.45)]">
 
-      <section className="relative mx-auto grid min-h-[86vh] max-w-7xl overflow-hidden rounded-[34px] border border-white/10 bg-white/5 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:grid-cols-2">
-        <div className="relative hidden min-h-[580px] lg:block">
+        {/* LEFT IMAGE */}
+        <div className="relative hidden lg:block min-h-[600px]">
           <Image
             src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1400&auto=format&fit=crop"
-            alt="Signup visual"
+            alt="signup"
             fill
-            priority
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/35 to-cyan-900/40" />
-
-          <div className="absolute inset-0 flex flex-col justify-between p-10 xl:p-12">
-            <div>
-              <p className="inline-block rounded-full border border-white/15 bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.3em] text-cyan-200 backdrop-blur-md">
-                Get Started
-              </p>
-            </div>
-
-            <div className="max-w-md">
-              <h1 className="text-4xl font-bold leading-tight xl:text-5xl">
-                Create your account and step into a modern premium interface
-              </h1>
-              <p className="mt-4 text-sm leading-6 text-white/75">
-                Join now and enjoy a smooth signup experience with elegant
-                glassmorphism design and clean interaction.
-              </p>
-            </div>
-          </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/30 to-cyan-900/40" />
         </div>
 
-        <div className="flex items-center justify-center px-5 py-8 sm:px-8 md:px-10">
-          <div className="w-full max-w-lg rounded-[28px] border border-white/10 bg-white/10 p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
-            <div className="mb-8 text-center">
-              <p className="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300/80">
-                Sign Up
-              </p>
-              <h2 className="text-3xl font-bold md:text-4xl">
-                Create your account
-              </h2>
-              <p className="mt-3 text-sm text-white/60">
-                Fill in your details to get started
-              </p>
+        {/* FORM */}
+        <div className="flex items-center justify-center p-6 sm:p-10">
+
+          <div className="w-full max-w-md space-y-6">
+
+            <div className="text-center">
+              <h2 className="text-3xl font-bold">Create Account</h2>
+              <p className="text-white/60 text-sm mt-2">Join and start your journey</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <input
-                    type="text"
-                    placeholder="First name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
-                  />
-                  {errors.firstName && (
-                    <p className="mt-2 text-xs text-red-300">
-                      {errors.firstName}
-                    </p>
-                  )}
-                </div>
 
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Last name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
-                  />
-                  {errors.lastName && (
-                    <p className="mt-2 text-xs text-red-300">
-                      {errors.lastName}
-                    </p>
-                  )}
-                </div>
+              <div className="grid grid-cols-2 gap-4">
+                <input className="input" placeholder="First name" value={firstName} onChange={e => setFirstName(e.target.value)} />
+                <input className="input" placeholder="Last name" value={lastName} onChange={e => setLastName(e.target.value)} />
               </div>
 
-              <div>
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
-                />
-                {errors.email && (
-                  <p className="mt-2 text-xs text-red-300">{errors.email}</p>
-                )}
-              </div>
+              <input className="input" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
 
-              <div>
+              {/* PASSWORD */}
+              <div className="relative">
                 <input
-                  type="password"
+                  className="input pr-10"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Create password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
+                  onChange={e => setPassword(e.target.value)}
                 />
-                {errors.password && (
-                  <p className="mt-2 text-xs text-red-300">{errors.password}</p>
-                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition"
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
               </div>
 
-              <div>
+              {/* CONFIRM PASSWORD */}
+              <div className="relative">
                 <input
-                  type="password"
+                  className="input pr-10"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
+                  onChange={e => setConfirmPassword(e.target.value)}
                 />
-                {errors.confirmPassword && (
-                  <p className="mt-2 text-xs text-red-300">
-                    {errors.confirmPassword}
-                  </p>
-                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition"
+                >
+                  {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
               </div>
 
               <button
-                type="submit"
                 disabled={loading}
-                className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-70"
+                className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 py-3 font-semibold text-black hover:scale-[1.01] transition"
               >
-                {loading ? "Creating Account..." : "Create Account"}
+                {loading ? "Creating..." : "Create Account"}
               </button>
+
             </form>
 
-            <p className="mt-8 text-center text-sm text-white/60">
+            <p className="text-center text-sm text-white/60">
               Already have an account?{" "}
-              <Link
-                href="/signin"
-                className="font-medium text-cyan-300 transition hover:text-cyan-200"
-              >
+              <Link href="/signin" className="text-cyan-300 hover:text-cyan-200">
                 Sign in
               </Link>
             </p>
+
           </div>
         </div>
       </section>
+
+      {/* reusable input style */}
+      <style jsx>{`
+        .input {
+          width: 100%;
+          padding: 12px 16px;
+          border-radius: 14px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.08);
+          outline: none;
+          font-size: 14px;
+          color: white;
+          transition: 0.2s;
+        }
+
+        .input:focus {
+          border-color: rgba(34,211,238,0.6);
+          background: rgba(255,255,255,0.08);
+        }
+      `}</style>
+
     </main>
   );
 }

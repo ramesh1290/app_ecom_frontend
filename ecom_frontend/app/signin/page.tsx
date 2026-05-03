@@ -22,7 +22,9 @@ export default function SignInPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [toast, setToast] = useState({
@@ -49,6 +51,7 @@ export default function SignInPage() {
     e.preventDefault();
 
     const errors: Record<string, string> = {};
+
     if (!email.trim()) errors.email = "Email is required.";
     if (!password.trim()) errors.password = "Password is required.";
 
@@ -59,7 +62,7 @@ export default function SignInPage() {
     }
 
     if (!apiBaseUrl) {
-      showToast("Missing API base URL. Check .env.local", "error");
+      showToast("Missing API base URL.", "error");
       return;
     }
 
@@ -69,9 +72,7 @@ export default function SignInPage() {
 
       const res = await fetch(`${apiBaseUrl}/api/login/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
@@ -86,141 +87,175 @@ export default function SignInPage() {
       localStorage.setItem("refresh", data.refresh);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      const loggedInUser: LoggedInUser | undefined = data.user;
+      const user: LoggedInUser = data.user;
 
       showToast("Login successful.", "success");
-      setEmail("");
-      setPassword("");
-      setShowPassword(false);
 
       setTimeout(() => {
-        if (loggedInUser?.is_staff || loggedInUser?.is_superuser) {
+        if (user?.is_staff || user?.is_superuser) {
           router.push("/dashboard");
         } else {
           router.push("/cart");
         }
       }, 500);
     } catch {
-      showToast("Server error. Please try again.", "error");
+      showToast("Server error. Try again.", "error");
     } finally {
       setLoading(false);
     }
   };
 
+  /* ---------------- ICONS ---------------- */
+
+  const EyeIcon = () => (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+
+  const EyeOffIcon = () => (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17.94 17.94C16.2 19.2 14.16 20 12 20C6 20 2.5 12 2.5 12" />
+      <path d="M3 3l18 18" />
+      <path d="M9.9 4.24A10.7 10.7 0 0112 4c6 0 9.5 8 9.5 8" />
+      <path d="M14.12 14.12A3 3 0 119.88 9.88" />
+    </svg>
+  );
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#030712] px-4 py-10 text-white">
+    <main className="relative min-h-screen bg-[#030712] px-4 py-10 text-white">
+
       <Toast show={toast.show} message={toast.message} type={toast.type} />
 
-      <div className="absolute inset-0">
-        <div className="absolute left-[-120px] top-[-120px] h-[260px] w-[260px] rounded-full bg-cyan-500/20 blur-3xl" />
-        <div className="absolute bottom-[-120px] right-[-120px] h-[280px] w-[280px] rounded-full bg-purple-500/20 blur-3xl" />
-        <div className="absolute left-1/2 top-1/3 h-[220px] w-[220px] -translate-x-1/2 rounded-full bg-fuchsia-500/10 blur-3xl" />
-      </div>
+      <section className="mx-auto grid max-w-7xl overflow-hidden rounded-[34px] border border-white/10 bg-white/5 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:grid-cols-2">
 
-      <section className="relative mx-auto grid min-h-[86vh] max-w-7xl overflow-hidden rounded-[34px] border border-white/10 bg-white/5 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:grid-cols-2">
-        <div className="relative hidden min-h-[580px] lg:block">
+        {/* LEFT SIDE */}
+        <div className="relative hidden min-h-[600px] lg:block">
           <Image
             src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1400&auto=format&fit=crop"
-            alt="Signin visual"
+            alt="signin"
             fill
-            priority
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-black/75 via-black/45 to-cyan-900/40" />
-
-          <div className="absolute inset-0 flex flex-col justify-between p-10 xl:p-12">
-            <div>
-              <p className="inline-block rounded-full border border-white/15 bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.3em] text-cyan-200 backdrop-blur-md">
-                Welcome Back
-              </p>
-            </div>
-
-            <div className="max-w-md">
-              <h1 className="text-4xl font-bold leading-tight xl:text-5xl">
-                Sign in and continue your premium shopping experience
-              </h1>
-              <p className="mt-4 text-sm leading-6 text-white/75">
-                Access your account, explore products, and continue with a
-                clean, modern, glass-style interface.
-              </p>
-            </div>
-          </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-black/75 via-black/40 to-cyan-900/40" />
         </div>
 
-        <div className="flex items-center justify-center px-5 py-8 sm:px-8 md:px-10">
-          <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-2xl sm:p-10">
-            <div className="mb-8 text-center">
-              <p className="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300/80">
-                Sign In
-              </p>
-              <h2 className="text-4xl font-bold md:text-5xl">Welcome back</h2>
-              <p className="mt-3 text-sm text-white/60">
-                Enter your details to access your account
+        {/* FORM */}
+        <div className="flex items-center justify-center p-6 sm:p-10">
+
+          <div className="w-full max-w-md space-y-6">
+
+            <div className="text-center">
+              <h2 className="text-3xl font-bold">Welcome Back</h2>
+              <p className="text-white/60 text-sm mt-2">
+                Sign in to continue
               </p>
             </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+              {/* EMAIL */}
               <div>
                 <input
                   type="email"
                   placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-base text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
+                  className="input"
                 />
                 {fieldErrors.email && (
-                  <p className="mt-2 text-sm text-red-300">{fieldErrors.email}</p>
+                  <p className="text-sm text-red-300 mt-2">
+                    {fieldErrors.email}
+                  </p>
                 )}
               </div>
 
-              <div>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 pr-16 text-base text-white placeholder:text-white/40 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 focus:bg-white/10"
-                  />
+              {/* PASSWORD */}
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="input pr-10"
+                />
 
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-xl transition hover:scale-110"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? "👁️" : "🙈"}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition"
+                  aria-label="toggle password"
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
 
-                {fieldErrors.password && (
-                  <p className="mt-2 text-sm text-red-300">
-                    {fieldErrors.password}
-                  </p>
-                )}
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-cyan-300 hover:text-cyan-200"
+                >
+                  Forgot password?
+                </Link>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 py-4 text-base font-semibold text-black transition hover:scale-[1.02] disabled:opacity-70"
+                className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-purple-300 py-3 font-semibold text-black hover:scale-[1.02] transition"
               >
                 {loading ? "Signing in..." : "Sign In"}
               </button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-white/60">
+            <p className="text-center text-sm text-white/60">
               Don&apos;t have an account?{" "}
-              <Link
-                href="/signup"
-                className="font-medium text-cyan-300 transition hover:text-cyan-200"
-              >
+              <Link href="/signup" className="text-cyan-300 hover:text-cyan-200">
                 Sign up
               </Link>
             </p>
+
           </div>
         </div>
       </section>
+
+      {/* shared input style */}
+      <style jsx>{`
+        .input {
+          width: 100%;
+          padding: 12px 16px;
+          border-radius: 14px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.08);
+          outline: none;
+          font-size: 14px;
+          color: white;
+          transition: 0.2s;
+        }
+
+        .input:focus {
+          border-color: rgba(34,211,238,0.6);
+          background: rgba(255,255,255,0.08);
+        }
+      `}</style>
+
     </main>
   );
 }
